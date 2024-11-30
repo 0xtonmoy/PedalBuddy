@@ -3,6 +3,9 @@ package com.example.pedalbuddy;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -15,34 +18,32 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-
 import com.google.android.material.navigation.NavigationView;
 
-public class Menu extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class AdminMenu extends AppCompatActivity  implements NavigationView.OnNavigationItemSelectedListener{
     private DrawerLayout drawer;
+
     Database db;
-    Button register, manage, get_ride, transaction;
-    TextView welcome;
+
     TextView nav_head_name, nav_head_email;
 
+    Button user, cycle, transaction, location, query;
+    TextView welcome;
     private String username = "";
     SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_menu);
+        setContentView(R.layout.activity_admin_menu);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         drawer = findViewById(R.id.drawer);
         NavigationView navigationView = findViewById(R.id.nav_view);
-        View hView =  navigationView.getHeaderView(0);
         navigationView.setNavigationItemSelectedListener(this);
+        View hView =  navigationView.getHeaderView(0);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
@@ -50,22 +51,19 @@ public class Menu extends AppCompatActivity implements NavigationView.OnNavigati
 
         db = new Database(this);
 
-        register = findViewById(R.id.register_button);
-        manage = findViewById(R.id.manage_button);
-        get_ride = findViewById(R.id.ride_button);
-        transaction = findViewById(R.id.transaction_button);
+        user = findViewById(R.id.user_admin_button);
+        cycle = findViewById(R.id.cycle_admin_button);
+        transaction = findViewById(R.id.transaction_admin_button);
+        location = findViewById(R.id.location_admin_button);
         welcome = findViewById(R.id.text_welcome);
         nav_head_name = hView.findViewById(R.id.nav_welcome);
         nav_head_email = hView.findViewById(R.id.nav_mail);
-
+        query = findViewById(R.id.contact_query_button);
 
         prefs = this.getSharedPreferences("PedalBuddy", 0);
-        username = prefs.getString("username", "");
+        username = prefs.getString("username", "UNKNOWN");
 
-        welcome.setText("Welcome " + username);
-
-
-        Cursor res = db.getData_User_username(username);
+        Cursor res = db.getData_Admin_username(username);
         StringBuffer nav_head = new StringBuffer();
         while(res.moveToNext()){
             nav_head.append(res.getString(1) + " " + res.getString(2) + ";");
@@ -75,26 +73,21 @@ public class Menu extends AppCompatActivity implements NavigationView.OnNavigati
         nav_head_name.setText(str_nav_head[0]);
         nav_head_email.setText(str_nav_head[1]);
 
-        register.setOnClickListener(new View.OnClickListener() {
+
+        welcome.setText("Welcome " + username);
+
+        user.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Menu.this, RegisterCycle.class);
+                Intent i = new Intent(AdminMenu.this, ViewUserAdmin.class);
                 startActivity(i);
             }
         });
 
-        manage.setOnClickListener(new View.OnClickListener() {
+        cycle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Menu.this, ManageCycle.class);
-                startActivity(i);
-            }
-        });
-
-        get_ride.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(Menu.this, GetRide.class);
+                Intent i = new Intent(AdminMenu.this, ViewCycleAdmin.class);
                 startActivity(i);
             }
         });
@@ -102,14 +95,28 @@ public class Menu extends AppCompatActivity implements NavigationView.OnNavigati
         transaction.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Menu.this, Transaction.class);
+                Intent i = new Intent(AdminMenu.this, TransactionAdmin.class);
                 startActivity(i);
             }
         });
 
+        location.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(AdminMenu.this, ManageLocationsAdmin.class);
+                startActivity(i);
+            }
+        });
+
+        query.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(AdminMenu.this, ViewQueryAdmin.class);
+                startActivity(i);
+            }
+        });
 
     }
-
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -117,8 +124,8 @@ public class Menu extends AppCompatActivity implements NavigationView.OnNavigati
         if (itemId == R.id.nav_menu) {
             // Handle nav_menu action (if any)
         } else if (itemId == R.id.nav_profile) {
-            Intent i = new Intent(Menu.this, Profile.class);
-            startActivity(i);
+            Intent i1 = new Intent(AdminMenu.this, AdminProfile.class);
+            startActivity(i1);
         } else if (itemId == R.id.nav_logout) {
             logout();
         }
@@ -138,7 +145,7 @@ public class Menu extends AppCompatActivity implements NavigationView.OnNavigati
     }
 
     private void logout(){
-        AlertDialog.Builder builder=new AlertDialog.Builder(Menu.this);
+        AlertDialog.Builder builder=new AlertDialog.Builder(AdminMenu.this);
         builder.setMessage("Do you want to logout?");
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
@@ -147,7 +154,7 @@ public class Menu extends AppCompatActivity implements NavigationView.OnNavigati
                 edit.putBoolean("userlogin", false);
                 edit.apply();
 
-                Intent i = new Intent(Menu.this, MainActivity.class);
+                Intent i = new Intent(AdminMenu.this, MainActivity.class);
                 startActivity(i);
                 i.putExtra("finish", true);
                 i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -166,5 +173,4 @@ public class Menu extends AppCompatActivity implements NavigationView.OnNavigati
         AlertDialog alert=builder.create();
         alert.show();
     }
-
 }

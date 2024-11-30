@@ -17,8 +17,6 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -27,11 +25,10 @@ import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
-public class ManageLocationsAdmin extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
+public class ViewQueryAdmin extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
     private DrawerLayout drawer;
 
     Database db;
-
     TextView nav_head_name, nav_head_email;
 
     TableLayout tableLayout;
@@ -40,14 +37,13 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
     StringBuffer bf;
     String username;
     SharedPreferences prefs;
-    EditText loc_name;
-    Button add_loc_button;
-    TextView name_tv, nodata,error;
+
+    TextView name_tv, subject_tv, date_tv, nodata;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_manage_locations_admin);
+        setContentView(R.layout.activity_view_query_admin);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -61,15 +57,12 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-
         db = new Database(this);
         tableLayout = findViewById(R.id.table);
-        add_loc_button = findViewById(R.id.add_loc_button);
-        loc_name = findViewById(R.id.loc_name);
         nodata = findViewById(R.id.nodata);
-        error = findViewById(R.id.error);
         nav_head_name = hView.findViewById(R.id.nav_welcome);
         nav_head_email = hView.findViewById(R.id.nav_mail);
+
         prefs = this.getSharedPreferences("PedalBuddy", 0);
         username = prefs.getString("username", "");
 
@@ -83,7 +76,6 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
         nav_head_name.setText(str_nav_head[0]);
         nav_head_email.setText(str_nav_head[1]);
 
-
         getData();
 
         if (hasData) {
@@ -92,7 +84,6 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
         } else {
             nodata.setText("No Data Available");
         }
-        add_loc();
     }
 
 
@@ -100,11 +91,11 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == R.id.nav_menu) {
-            Intent i = new Intent(ManageLocationsAdmin.this, AdminMenu.class);
+            Intent i = new Intent(ViewQueryAdmin.this, AdminMenu.class);
             startActivity(i);
             finish();
         } else if (itemId == R.id.nav_profile) {
-            Intent i1 = new Intent(ManageLocationsAdmin.this, AdminProfile.class);
+            Intent i1 = new Intent(ViewQueryAdmin.this, AdminProfile.class);
             startActivity(i1);
         } else if (itemId == R.id.nav_logout) {
             logout();
@@ -125,7 +116,7 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
     }
 
     private void logout(){
-        AlertDialog.Builder builder=new AlertDialog.Builder(ManageLocationsAdmin.this);
+        AlertDialog.Builder builder=new AlertDialog.Builder(ViewQueryAdmin.this);
         builder.setMessage("Do you want to logout?");
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
@@ -134,7 +125,7 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
                 edit.putBoolean("userlogin", false);
                 edit.apply();
 
-                Intent i = new Intent(ManageLocationsAdmin.this, MainActivity.class);
+                Intent i = new Intent(ViewQueryAdmin.this, MainActivity.class);
                 startActivity(i);
                 i.putExtra("finish", true);
                 i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -154,46 +145,8 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
         alert.show();
     }
 
-
-    private void add_loc() {
-        add_loc_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Cursor res = db.getLocation_name(loc_name.getText().toString().trim());
-
-                if (res.getCount()==0) {
-                    boolean inserted = db.insertData_Location(loc_name.getText().toString().trim());
-                    if(inserted){
-                        Toast.makeText(ManageLocationsAdmin.this, "Location Inserted", Toast.LENGTH_LONG).show();
-                        loc_name.getText().clear();
-                        error.setText("");
-                        nodata.setText("");
-                        tableLayout.removeAllViews();
-                        getData();
-                        if(hasData) {
-                            addHeaders();
-                            addData();
-                        }
-                        else{
-                            nodata.setText("No Data Available");
-                        }
-
-                    }
-
-                    else {
-                        Toast.makeText(ManageLocationsAdmin.this, "Cannot Insert Location", Toast.LENGTH_LONG).show();
-                    }
-                } else {
-                    String s = "Location Already Available";
-                    error.setText(s);
-                    loc_name.getText().clear();
-                }
-            }
-        });
-    }
-
     public void getData() {
-        Cursor result = db.getAllData_Location();
+        Cursor result = db.getAllData_Contact();
         if (result.getCount() == 0) {
             hasData = false;
         }
@@ -201,7 +154,11 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
 
             bf = new StringBuffer();
             while (result.moveToNext()) {
-                bf.append(result.getString(0) + "\n");
+                bf.append(result.getString(0) + ";");
+                bf.append(result.getString(1) + ";");
+                bf.append(result.getString(2) + ";");
+                bf.append(result.getString(3) + ";");
+                bf.append(result.getString(4) + "\n");
             }
             bf.deleteCharAt(bf.length()-1);
             hasData = true;
@@ -216,7 +173,7 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
 
 
         TextView header4 = new TextView(this);
-        header4.setText("Location Name");
+        header4.setText("Date");
         header4.setTextColor(Color.WHITE);
         header4.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark,null));
         header4.setTextSize(15);
@@ -225,6 +182,29 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
         header4.setPadding(15, 25, 15, 25);
         header4.setTypeface(Typeface.SERIF, Typeface.BOLD);
         tableRow.addView(header4);
+
+        TextView header = new TextView(this);
+        header.setText("Name");
+        header.setTextColor(Color.WHITE);
+        header.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark,null));
+        header.setTextSize(15);
+        header.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        header.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));
+        header.setPadding(15, 25, 15, 25);
+        header.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        tableRow.addView(header);
+
+        TextView header3 = new TextView(this);
+        header3.setText("Subject");
+        header3.setTextColor(Color.WHITE);
+        header3.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark,null));
+        header3.setTextSize(15);
+        header3.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        header3.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        header3.setPadding(15, 25, 15, 25);
+        header3.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        tableRow.addView(header3);
+
 
         tableLayout.addView(tableRow, new TableLayout.LayoutParams(
                 LayoutParams.MATCH_PARENT,
@@ -246,6 +226,18 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
                     LayoutParams.WRAP_CONTENT));
 
 
+            date_tv = new TextView(this);
+            date_tv.setText(data[4]);
+            date_tv.setTextColor(getResources().getColor(R.color.colorAccent,null));
+            date_tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            date_tv.setTypeface(Typeface.SERIF, Typeface.NORMAL);
+            date_tv.setTextSize(15);
+            //reg_no_tv.setBackgroundColor(Color.LTGRAY);
+            date_tv.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));
+            date_tv.setPadding(15, 20, 15, 20);
+            tableRow.addView(date_tv);
+
+
             name_tv = new TextView(this);
             name_tv.setText(data[0]);
             name_tv.setTextColor(getResources().getColor(R.color.colorAccent,null));
@@ -258,12 +250,28 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
             tableRow.addView(name_tv);
 
 
+
+            subject_tv = new TextView(this);
+            subject_tv.setText(data[2]);
+            subject_tv.setTextColor(getResources().getColor(R.color.colorAccent,null));
+            subject_tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            //price_tv.setBackgroundColor(Color.LTGRAY);
+            subject_tv.setTextSize(15);
+            subject_tv.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));
+            subject_tv.setPadding(15, 20, 15, 20);
+            subject_tv.setTypeface(Typeface.SERIF, Typeface.NORMAL);
+            tableRow.addView(subject_tv);
+
             tableRow.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     StringBuffer buffer = new StringBuffer();
-                    buffer.append("Name: "+data[0] + "\n\n");
-                    showMessage("Details", buffer.toString(),data[0]);
+                    buffer.append("Query Date.: "+data[4] + "\n\n");
+                    buffer.append("Name.: "+data[0] + "\n\n");
+                    buffer.append("Email ID: "+data[1] + "\n\n");
+                    buffer.append("Subject: "+data[2] + "\n\n");
+                    buffer.append("Query: "+data[3]+ "\n\n");
+                    showMessage("Details", buffer.toString(), data[4],data[1],data[2]);
                 }
             });
 
@@ -296,7 +304,7 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
                 }
             });*/
 
-    private void showMessage(String title, String message, final String name) {
+    private void showMessage(String title, String message, final String date,final String email,final String subject) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);
         builder.setMessage(message);
@@ -304,26 +312,26 @@ public class ManageLocationsAdmin extends AppCompatActivity implements Navigatio
         builder.setNegativeButton("DELETE", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                AlertDialog.Builder builder=new AlertDialog.Builder(ManageLocationsAdmin.this); //Home is name of the activity
-                builder.setMessage("Are you sure you want to delete location?");
+                AlertDialog.Builder builder=new AlertDialog.Builder(ViewQueryAdmin.this); //Home is name of the activity
+                builder.setMessage("Are you sure you want to delete query?");
                 builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-                        Integer deleteRows = db.deleteData_Location(name);
-                        if(deleteRows > 0) {
-                            Toast.makeText(ManageLocationsAdmin.this, "Location Deleted", Toast.LENGTH_SHORT).show();
-                            tableLayout.removeAllViews();
-                            getData();
-                            if(hasData) {
-                                addHeaders();
-                                addData();
+                            Integer deleteRows = db.deleteQuery(date,email,subject);
+                            if(deleteRows > 0) {
+                                Toast.makeText(ViewQueryAdmin.this, "Query Deleted", Toast.LENGTH_SHORT).show();
+                                tableLayout.removeAllViews();
+                                getData();
+                                if(hasData) {
+                                    addHeaders();
+                                    addData();
+                                }
+                                else{
+                                    nodata.setText("No Data Available");
+                                }
                             }
-                            else{
-                                nodata.setText("No Data Available");
-                            }
-                        }
-                        else
-                            Toast.makeText(ManageLocationsAdmin.this, "Location Not Deleted", Toast.LENGTH_SHORT).show();
+                            else
+                                Toast.makeText(ViewQueryAdmin.this, "Query Not Deleted", Toast.LENGTH_SHORT).show();
 
                     }
                 });
